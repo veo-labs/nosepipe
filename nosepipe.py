@@ -40,28 +40,6 @@ class NullWritelnFile(object):
         pass
 
 
-class Code(object):
-    def __init__(self, code):
-        self.co_filename = code.co_filename
-        self.co_name = code.co_name
-
-
-class Frame(object):
-    def __init__(self, frame):
-        self.f_globals = {"__file__": frame.f_globals["__file__"]}
-        self.f_code = Code(frame.f_code)
-
-
-class Traceback(object):
-    def __init__(self, tb):
-        self.tb_frame = Frame(tb.tb_frame)
-        self.tb_lineno = tb.tb_lineno
-        if tb.tb_next is None:
-            self.tb_next = None
-        else:
-            self.tb_next = Traceback(tb.tb_next)
-
-
 class ProcessIsolationReporterPlugin(nose.plugins.Plugin):
 
     """Part of the internal mechanism for ProcessIsolationPlugin.
@@ -98,8 +76,7 @@ class ProcessIsolationReporterPlugin(nose.plugins.Plugin):
 
     def _send_test_event(self, method_name, test, err=None):
         if err is not None:
-            exc_pickle = pickle.dumps(
-                self._fake_exc_info(err)).decode("latin1")
+            exc_pickle = pickle.dumps(err).decode("latin1")
             data = "%s:%s" % (method_name, exc_pickle)
         else:
             data = method_name
@@ -114,11 +91,6 @@ class ProcessIsolationReporterPlugin(nose.plugins.Plugin):
             self._stream.write(header + data)
 
         self._stream.flush()
-
-    def _fake_exc_info(self, exc_info):
-        # suitable for pickling
-        exc_type, exc_value = exc_info[:2]
-        return exc_type, exc_value, Traceback(exc_info[2])
 
 
 class SubprocessTestProxy(object):
